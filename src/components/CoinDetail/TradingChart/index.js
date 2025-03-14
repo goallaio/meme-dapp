@@ -27,6 +27,7 @@ const TradingChart = ({ tokenAddress }) => {
   };
 
   useEffect(() => {
+    if (!tokenAddress) return;
     fetchChartData();
   }, [tokenAddress]);
 
