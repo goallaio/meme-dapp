@@ -1,0 +1,162 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["darwin-arm64", "windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId   String  @id @default(nanoid()) @map("user_id")
+  address  String  @unique
+  username String
+  bio      String?
+
+  createTime DateTime @default(now()) @map("create_time")
+  updateTime DateTime @updatedAt @map("update_time")
+
+  Token           Token[]
+  UserToken       UserToken[]
+  comment         Comment[]
+
+  @@map("user")
+}
+
+model Token {
+  tokenId     String  @id @default(nanoid()) @map("token_id")
+  userId      String  @map("user_id")
+  name        String
+  ticker      String  @unique
+  image       String
+  description String
+  telegram    String?
+  weblink     String?
+  twitter     String?
+
+  tokenInfo   String? @map("token_info")
+  fee         String?
+  gasUsed     String? @map("gas_used")
+  gasPrice    String? @map("gas_price")
+  from        String?
+  to          String?
+  address     String? @unique
+  bondAddress String? @map("bond_address")
+  decimals    String?
+
+  createTime DateTime @default(now()) @map("create_time")
+  updateTime DateTime @updatedAt @map("update_time")
+
+  user User @relation(fields: [userId], references: [userId])
+
+  Transaction Transaction[]
+  UserToken   UserToken[]
+  Comment     Comment[]
+
+  @@map("token")
+}
+
+model Transaction {
+  transactionId String  @id @default(nanoid()) @map("transaction_id")
+  type          Int? // 0: sale, 1: buy 
+  hoster        String?
+  address       String?
+  to            String? @map("to")
+
+  amount      String? @map("amount")
+  tokenAmount String? @map("token_amount")
+
+  fee          String?
+  gasUsed      String?  @map("gas_used")
+  gasPrice     String?  @map("gas_price")
+  timestamp    DateTime @default(now())
+  currentPrice String?  @map("current_price")
+
+  token      Token? @relation(fields: [address], references: [address])
+
+  @@map("transaction")
+}
+
+model UserToken {
+  userTokenId String @id @default(nanoid()) @map("user_token_id")
+  userId      String @map("user_id")
+  tokenId     String @map("token_id")
+  amount      Int    @default(0)
+
+  user  User  @relation(fields: [userId], references: [userId])
+  token Token @relation(fields: [tokenId], references: [tokenId])
+
+  createTime DateTime @default(now()) @map("create_time")
+  updateTime DateTime @updatedAt @map("update_time")
+
+  @@map("user_token")
+}
+
+model PriceHistory {
+  priceHistoryId String   @id @default(nanoid()) @map("price_history_id")
+  tokenAddress   String   @map("token_address")
+  
+  originPrice    BigInt   @map("origin_price")
+  formattedPrice String   @map("formatted_price")
+
+  timestamp      DateTime @default(now())
+
+  @@map("price_history")
+}
+
+model PriceStatistics {
+  priceStatisticsId String   @id @default(nanoid()) @map("price_statistics_id")
+  tokenAddress      String   @map("token_address")
+
+  minPrice          BigInt   @map("min_price")
+  maxPrice          BigInt   @map("max_price")
+  startPrice        BigInt   @map("start_price")
+  endPrice          BigInt   @map("end_price")
+
+  timestamp         DateTime
+
+  @@map("price_statistics")
+}
+
+model Comment {
+  commentId     String   @id @default(nanoid()) @map("comment_id")
+  userId        String   @map("user_id")
+  tokenId       String   @map("token_id")
+  text          String
+  image         String?
+  createTime    DateTime @default(now()) @map("create_time")
+  replyToId     String?  @map("reply_to_id")
+
+  user  User  @relation(fields: [userId], references: [userId])
+  token Token @relation(fields: [tokenId], references: [tokenId])
+  replyTo Comment? @relation("CommentReplies", fields: [replyToId], references: [commentId], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@map("comment")
+}
+
+model TokenTransaction {
+  id String @id @default(nanoid()) @map("id")
+
+  type Int? // 0: sell, 1: buy
+
+  tokenAddress String?
+
+  address String?
+  hash    String? @unique
+  userId  String? @map("user_id")
+
+  // okb amount
+  amount      String?  @map("amount")
+  tokenAmount String?  @map("token_amount")
+  timestamp   DateTime @default(now())
+
+  @@map("token_transaction")
+}
