@@ -1,6 +1,7 @@
-import { findToken, updateToken, deleteToken } from '@/services/token';
+import { findToken, updateToken } from '@/services/token';
 import { NextResponse } from 'next/server';
 import { getTokenMarket } from '../route';
+import { deleteToken } from '@/request/token';
 
 export async function GET(req, { params }) {
   const { slug } = await params;

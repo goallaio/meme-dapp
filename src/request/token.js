@@ -35,7 +35,7 @@ export const getTokenCahrtData = async (tokenAddress, data) => {
 };
 
 export const getOkbPrice = () => {
-  return fetchData('https://api.coingecko.com/api/v3/simple/price?ids=okb&vs_currencies=usd');
+  return fetchData('/api/price/usd');
 };
 
 export const getTransactions = ({pageNo, address}) => {
