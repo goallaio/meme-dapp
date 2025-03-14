@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
         <AntdRegistry>
           <AntdProvider>
             <GlobalProvider serverValue={{urlInfo}}>
-              <div className='h-full w-full flex flex-col max-w-7xl mx-auto'>
+              <div className='h-full w-full flex flex-col'>
                 <NavHeader />
                 {children}
               </div>

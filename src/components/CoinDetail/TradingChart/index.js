@@ -20,7 +20,6 @@ const TradingChart = ({ tokenAddress }) => {
     const data = dateRange || {startTime: date.subtract(5, 'd').startOf('d').valueOf(), endTime: date.endOf('d').valueOf()};
     try {
       const res = await getTokenCahrtData(tokenAddress, data);
-      console.log(res);
       setInitData(res);
     } catch (error) {
       console.error('Failed to fetch chart data:', error);

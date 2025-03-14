@@ -46,6 +46,10 @@ export const createTokenTransaction = (data) => {
   return fetchData('/api/trading', { method: 'POST', body: data });
 };
 
+export const getTokenCommentCount = (tokenId) => {
+  return fetchData(`/api/count/comment/${tokenId}`);
+};
+
 export const getCommentList = (tokenId, params) => {
   return fetchData(`/api/comment/${tokenId}`, { method: 'GET', params });
 };

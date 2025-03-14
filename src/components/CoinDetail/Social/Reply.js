@@ -11,8 +11,6 @@ import { addComment } from '@/request/token';
 import { v4 as uuidv4 } from 'uuid';
 
 const ReplyList = ({ record }) => {
-  console.log(record);
-
   const { address, name, ticker, user, tokenId } = record || {};
 
   const [replyModalVisible, setReplyModalVisible] = useState(false);
