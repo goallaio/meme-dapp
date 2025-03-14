@@ -4,6 +4,7 @@ import { createChart, ColorType, CandlestickSeries } from 'lightweight-charts';
 import { getTokenCahrtData } from '@/request/token';
 // import {generateData} from '@/util/sampleChart';
 import dayjs from 'dayjs';
+import {Button} from 'antd';
 
 const TradingChart = ({ tokenAddress }) => {
   const containerRef = useRef();
@@ -11,6 +12,8 @@ const TradingChart = ({ tokenAddress }) => {
   const seriesRef = useRef();
 
   const [initData, setInitData] = useState([]);
+  const [day, setDay] = useState(5);
+  const [mode, setMode] = useState(0);
 
   const fetchChartData = async (dateRange) => {
     const date = dayjs();
@@ -147,10 +150,71 @@ const TradingChart = ({ tokenAddress }) => {
   }, []);
 
   return (
-    <div
-      className='w-full h-full'
-      ref={containerRef}
-    ></div>
+    <div className='w-full h-full'>
+      <div className='w-full h-[600px]' ref={containerRef} />
+      <div className='flex w-full justify-between'>
+        <div className='flex gap-2 flex-1'>
+          <Button
+            type={day === 1 ? 'default' : 'text'}
+            onClick={() => {
+              setDay(1);
+              fetchChartData({startTime: dayjs().subtract(1, 'd').startOf('d').valueOf(), endTime: dayjs().endOf('d').valueOf()});
+            }}
+            className='text-white p-2 rounded-md'
+          >
+            1D
+          </Button>
+          <Button
+            type={day === 5 ? 'default' : 'text'}
+            onClick={() => {
+              setDay(5);
+              fetchChartData({startTime: dayjs().subtract(5, 'd').startOf('d').valueOf(), endTime: dayjs().endOf('d').valueOf()})
+            }}
+            className='text-white p-2 rounded-md'
+          >
+            5D
+          </Button>
+        </div>
+        <div className='flex gap-2 flex-1'>
+          <Button
+            type={mode === 0 ? 'default' : 'text'}
+            onClick={() => {
+              setMode(0);
+              chartRef.current.applyOptions({rightPriceScale: {mode: 0}});
+            }}
+          >
+            Normal
+          </Button>
+          <Button
+            type={mode === 1 ? 'default' : 'text'}
+            onClick={() => {
+              setMode(1);
+              chartRef.current.applyOptions({rightPriceScale: {mode: 1}});
+            }}
+          >
+            L
+          </Button>
+          <Button
+            type={mode === 2 ? 'default' : 'text'}
+            onClick={() => {
+              setMode(2);
+              chartRef.current.applyOptions({rightPriceScale: {mode: 2}});
+            }}
+          >
+            Percent
+          </Button>
+          <Button
+            type={mode === 3 ? 'default' : 'text'}
+            onClick={() => {
+              setMode(3);
+              chartRef.current.applyOptions({rightPriceScale: {mode: 3}});
+            }}
+          >
+            Percent100
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -33,7 +33,7 @@ const CoinDetailPage = async ({ params }) => {
             record={token}
             tokenCount={tokenCount}
           />
-          <div className='h-[600px]'>
+          <div className=''>
             <TradingChart tokenAddress={token.address} />
           </div>
           <CoinDetailSocialTab
