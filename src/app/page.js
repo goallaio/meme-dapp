@@ -6,7 +6,6 @@ import { getTokenList } from '@/request/token';
 import { Select, Pagination } from 'antd';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useContext, useEffect, useMemo, useState } from 'react';
@@ -165,15 +164,15 @@ export const SingleCoinCard = ({ record, logoPrefix, okbPrice }) => {
 
   return (
     <Link
-      href={`/coin/${record.tokenId}`}
+      href={`/coin/${record?.tokenId}`}
       className='text-gray-400'
     >
       <div
         className='border border-transparent hover:border-white flex gap-2 max-h-[300px] overflow-hidden p-2'
       >
         <div className='relative min-w-32 self-start'>
-          <Image
-            src={`${logoPrefix}/${record.ticker}`}
+          <img
+            src={`${logoPrefix}/${record?.image}`}
             alt='coin image'
             className='h-auto w-32'
             width={128}

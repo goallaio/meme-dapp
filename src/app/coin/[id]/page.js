@@ -6,12 +6,10 @@ import Link from 'next/link';
 import CoinDetailSocialTab from '@/components/CoinDetail/Social';
 import { use, useContext, useEffect, useState } from 'react';
 import { getToken, getTokenCommentCount } from '@/request/token';
-import { Spin } from 'antd';
+import { Spin, App } from 'antd';
 import { GlobalContext } from '@/context/global';
-import Image from 'next/image';
-import { CopyOutlined } from '@ant-design/icons';
+import { CopyOutlined, GlobalOutlined, XOutlined } from '@ant-design/icons';
 import { copyText } from '@/util';
-import { App } from 'antd';
 
 const CoinDetailPage = ({ params }) => {
   const { id } = use(params);
@@ -75,13 +73,14 @@ const CoinDetailPage = ({ params }) => {
             record={tokenInfo}
           />
         </div>
-        <div className='w-fit md:mx-auto flex flex-col gap-4'>
+        <div className='w-fit md:mx-auto flex flex-col gap-5'>
           <TransactionCard
             record={tokenInfo}
           />
           <RightTokenBrief
             record={tokenInfo}
           />
+          <SocialLinks record={tokenInfo} />
           <CopyableAddress address={tokenInfo?.address} />
         </div>
       </div>
@@ -105,20 +104,20 @@ const CoinDetailPage = ({ params }) => {
   )
 }
 
-const RightTokenBrief = ({record}) => {
-  const {logoPrefix} = useContext(GlobalContext);
+const RightTokenBrief = ({ record }) => {
+  const { logoPrefix } = useContext(GlobalContext);
 
   if (!record) {
     return null;
   }
 
-  const {name, ticker} = record;
+  const { name, ticker } = record;
 
   return (
     <div className='flex gap-2'>
       <div className='relative min-w-32 self-start'>
-        <Image
-          src={`${logoPrefix}/${record?.ticker}`}
+        <img
+          src={`${logoPrefix}/${record?.image}`}
           alt='coin image'
           className='h-auto w-32'
           width={128}
@@ -136,8 +135,8 @@ const RightTokenBrief = ({record}) => {
   );
 };
 
-const CopyableAddress = ({address}) => {
-  const {message} = App.useApp();
+const CopyableAddress = ({ address }) => {
+  const { message } = App.useApp();
 
   const clickCopy = async () => {
     try {
@@ -173,6 +172,68 @@ const CopyableAddress = ({address}) => {
         />
       </button>
     </div>
+  );
+};
+
+const SocialLinks = ({record}) => {
+  const {telegram, weblink, twitter} = record || {};
+
+  return (
+    <div className='flex gap-2'>
+      {
+        telegram ? (
+          <SocialLink
+            icon={(
+              <img
+                src='/tg.png'
+                alt='telegram'
+                className='h-3 w-3 rounded-full'
+              />
+            )}
+            link={telegram}
+          >
+            telegram
+          </SocialLink>
+        ) : null
+      }
+      {
+        twitter ? (
+          <SocialLink
+            icon={<XOutlined className='text-xs' />}
+            link={twitter}
+          >
+            twitter
+          </SocialLink>
+        ) : null
+
+      }
+      {
+        weblink ? (
+          <SocialLink
+            icon={<GlobalOutlined className='text-xs' />}
+            link={weblink}
+          >
+            website
+          </SocialLink>
+        ) : null
+      }
+    </div>
+  );
+};
+
+const SocialLink = ({icon, link, children}) => {
+  return (
+    <Link
+      href={link}
+      className='flex-1 flex h-6 flex-grow items-center justify-center gap-2 rounded-md bg-gray-700 px-2 py-1 text-gray-400 transition-all duration-200 hover:bg-gray-600'
+      target='_blank'
+      rel='noreferrer'
+    >
+      {icon}
+      <span>
+        {children}
+      </span>
+    </Link>
   );
 };
 

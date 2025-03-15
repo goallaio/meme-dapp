@@ -6,7 +6,6 @@ import { parseReceipt } from '@/util/coin/parseReceipt';
 import { Button, Input, App } from 'antd';
 import clsx from 'clsx';
 import { ethers, formatEther, parseEther, parseUnits } from 'ethers';
-import Image from 'next/image';
 import { useContext, useMemo, useState } from 'react';
 
 const TransactionCard = ({ record }) => {
@@ -14,7 +13,7 @@ const TransactionCard = ({ record }) => {
 
   const { user } = useContext(GlobalContext);
 
-  const { bondAddress, address, ticker } = record || {};
+  const { bondAddress, address, ticker, image } = record || {};
 
   const { message } = App.useApp();
 
@@ -55,8 +54,6 @@ const TransactionCard = ({ record }) => {
         });
 
         const receipt = await tx.wait();
-
-        console.log(receipt);
 
         const obj = parseReceipt(receipt, bondFactory);
 
@@ -135,7 +132,7 @@ const TransactionCard = ({ record }) => {
           isBuyMode ? (
             <BuyInfoArea coinType={upperSymbol} onClick={tradeCoin} loading={loading} />
           ) : (
-            <SellInfoArea onClick={tradeCoin} coinType={upperSymbol} loading={loading} />
+            <SellInfoArea onClick={tradeCoin} coinType={upperSymbol} loading={loading} image={image} tokenAddress={address} />
           )
         }
       </div>
@@ -148,10 +145,33 @@ const BuyInfoArea = ({ coinType, onClick, loading }) => {
 
   const [isDefault, setIsDefault] = useState(true);
 
+  const buyOptions = [
+    {
+      label: '0.1 OKB',
+      value: 0.1
+    },
+    {
+      label: '0.5 OKB',
+      value: 0.5
+    },
+    {
+      label: '1 OKB',
+      value: 1
+    }
+  ];
+
   const handleInputChange = (e) => {
     const val = e.target.value;
     if (/^\d*\.?\d*$/.test(val)) {
       setInputValue(val);
+    }
+  };
+
+  const clickBuyOption = (value) => {
+    if (value === 'max') {
+      console.log('max');
+    } else {
+      setInputValue(value);
     }
   };
 
@@ -177,10 +197,8 @@ const BuyInfoArea = ({ coinType, onClick, loading }) => {
               <span>
                 {isDefault ? 'OKB' : coinType}
               </span>
-              <Image
-                src={'/okb.png'}
-                width={32}
-                height={32}
+              <img
+                src='/okb.png'
                 alt='logo'
                 className='w-8 h-8'
                 style={{
@@ -190,7 +208,7 @@ const BuyInfoArea = ({ coinType, onClick, loading }) => {
             </div>
           )}
         />
-        <div className='mt-2'>
+        <div className='mt-2 flex items-center gap-1'>
           <Button
             size='small'
             className='text-xs'
@@ -198,6 +216,22 @@ const BuyInfoArea = ({ coinType, onClick, loading }) => {
           >
             reset
           </Button>
+          {
+            buyOptions.map((option) => {
+              return (
+                <Button
+                  key={option.value}
+                  size='small'
+                  className='text-xs'
+                  onClick={() => clickBuyOption(option.value)}
+                >
+                  <span className='text-xs'>
+                    {option.label}
+                  </span>
+                </Button>
+              );
+            })
+          }
         </div>
       </div>
       <div className='flex flex-col'>
@@ -215,14 +249,69 @@ const BuyInfoArea = ({ coinType, onClick, loading }) => {
   );
 };
 
-const SellInfoArea = ({ onClick, coinType, loading }) => {
+const SellInfoArea = ({ onClick, coinType, loading, image, tokenAddress }) => {
   const [inputValue, setInputValue] = useState('');
+
+  const { logoPrefix } = useContext(GlobalContext);
+
+  const { message } = App.useApp();
+
+  const getUserBalance = async (tokenAddress) => {
+    try {
+      if (!window.ethereum) {
+        message.error('Please install MetaMask first.');
+        return;
+      }
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.send('eth_requestAccounts', []);
+  
+      const signer = await provider.getSigner();
+      const signerAddress = await signer.getAddress();
+      const tokenContract = new ethers.Contract(tokenAddress, TOKEN_ABI, signer);
+  
+      const balance = await tokenContract.balanceOf(signerAddress);
+      const formattedBalance = formatEther(balance);
+      return formattedBalance;
+    } catch (e) {
+      // do nothing
+      console.log(e);
+    }
+  };
+
+  const sellOptions = [
+    {
+      label: '25%',
+      value: 0.25
+    },
+    {
+      label: '50%',
+      value: 0.5
+    },
+    {
+      label: '75%',
+      value: 0.75
+    },
+    {
+      label: '100%',
+      value: 1
+    }
+  ];
 
   const handleInputChange = (e) => {
     const val = e.target.value;
     if (/^\d*\.?\d*$/.test(val)) {
       setInputValue(val);
     }
+  };
+
+  const clickSellOption = async (value) => {
+    const userBalance = await getUserBalance(tokenAddress);
+    const sellAmount = Number(userBalance) * value;
+    if (sellAmount <= 0) {
+      message.error('you have no balance to sell.');
+      return;
+    }
+    setInputValue(sellAmount);
   };
 
   return (
@@ -246,10 +335,8 @@ const SellInfoArea = ({ onClick, coinType, loading }) => {
               <span>
                 {coinType}
               </span>
-              <Image
-                src={'/okb.png'}
-                width={32}
-                height={32}
+              <img
+                src={`${logoPrefix}/${image}`}
                 alt='logo'
                 className='w-8 h-8'
                 style={{
@@ -259,7 +346,7 @@ const SellInfoArea = ({ onClick, coinType, loading }) => {
             </div>
           )}
         />
-        <div className='mt-2'>
+        <div className='mt-2 flex gap-1'>
           <Button
             size='small'
             className='text-xs'
@@ -267,6 +354,22 @@ const SellInfoArea = ({ onClick, coinType, loading }) => {
           >
             reset
           </Button>
+          {
+            sellOptions.map((option) => {
+              return (
+                <Button
+                  key={option.value}
+                  size='small'
+                  className='text-xs'
+                  onClick={() => clickSellOption(option.value)}
+                >
+                  <span className='text-xs'>
+                    {option.label}
+                  </span>
+                </Button>
+              );
+            })
+          }
         </div>
       </div>
       <div className='flex flex-col'>

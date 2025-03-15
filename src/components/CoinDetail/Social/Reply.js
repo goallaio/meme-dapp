@@ -1,7 +1,6 @@
 'use client';
 import { GlobalContext } from '@/context/global';
 import dayjs from 'dayjs';
-import Image from 'next/image';
 import Link from 'next/link';
 import { use, useContext, useState } from 'react';
 import ReplyItemList from './ReplyList';
@@ -49,7 +48,7 @@ const ReplyList = ({ record }) => {
 };
 
 const CreatedInfoCard = ({ record }) => {
-  const { address, name, ticker, user, createTime } = record || {};
+  const { address, name, ticker, user, createTime, image } = record || {};
 
   const {logoPrefix} = useContext(GlobalContext);
 
@@ -74,8 +73,8 @@ const CreatedInfoCard = ({ record }) => {
       </div>
       <div className='flex gap-2'>
         <div className='relative min-w-32 self-start'>
-          <Image
-            src={`${logoPrefix}/${ticker}`}
+          <img
+            src={`${logoPrefix}/${image}`}
             alt='coin image'
             className='h-auto w-32'
             width={128}
