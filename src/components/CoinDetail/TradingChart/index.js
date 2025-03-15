@@ -1,12 +1,14 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { createChart, ColorType, CandlestickSeries } from 'lightweight-charts';
 import { getTokenCahrtData } from '@/request/token';
 // import {generateData} from '@/util/sampleChart';
 import dayjs from 'dayjs';
 import {Button} from 'antd';
+import {GlobalContext} from '@/context/global';
 
 const TradingChart = ({ tokenAddress }) => {
+  const {onSocket, offSocket, sendMessage} = useContext(GlobalContext);
   const containerRef = useRef();
   const chartRef = useRef();
   const seriesRef = useRef();
@@ -14,6 +16,7 @@ const TradingChart = ({ tokenAddress }) => {
   const [initData, setInitData] = useState([]);
   const [day, setDay] = useState(5);
   const [mode, setMode] = useState(0);
+  const [realTime, setRealTime] = useState(false);
 
   const fetchChartData = async (dateRange) => {
     const date = dayjs();
@@ -59,13 +62,12 @@ const TradingChart = ({ tokenAddress }) => {
         width: '100%',
         textColor: '#eeeeee',
       },
-      // localization: {
-      //   timeFormatter: businessDayOrTimestamp => {
-      //     const str = new Date(businessDayOrTimestamp * 1000).toLocaleString();
-      //     console.log(str);
-      //     return str;
-      //   }
-      // },
+      localization: {
+        timeFormatter: businessDayOrTimestamp => {
+          const str = dayjs(businessDayOrTimestamp * 1000).format('YYYY-MM-DD HH:mm');
+          return str;
+        }
+      },
       grid: {
         vertLines: {
             color: '#333333',
@@ -142,12 +144,51 @@ const TradingChart = ({ tokenAddress }) => {
     seriesRef.current = newSeries;
     window.addEventListener('resize', handleResize);
 
+    const realTime = localStorage.getItem('realTime');
+    setRealTime(realTime === undefined ? true : JSON.parse(realTime));
+
     return () => {
       window.removeEventListener('resize', handleResize);
 
       chart.remove();
     };
   }, []);
+
+  const listenRealTime = useCallback((item) => {
+    if (item.tokenAddress === tokenAddress) {
+      const d = {
+        time: dayjs(item.timestamp || item.time).unix(),
+        open: Number(item.startPrice),
+        high: Number(item.maxPrice),
+        low: Number(item.minPrice),
+        close: Number(item.endPrice),
+      };
+      seriesRef.current?.update(d);
+    }
+  }, [tokenAddress]);
+
+  const subRealTime = useCallback(() => {
+    if (!tokenAddress) return;
+    sendMessage('subToken', {address: tokenAddress});
+    onSocket('price', listenRealTime);
+  }, [listenRealTime, onSocket, sendMessage, tokenAddress]);
+
+  const unsubRealTime = useCallback(() => {
+    if (!tokenAddress) return;
+    sendMessage('unsubToken', {address: tokenAddress});
+    offSocket('price', listenRealTime);
+  }, [listenRealTime, offSocket, sendMessage, tokenAddress]);
+
+  useEffect(() => {
+    if (realTime) {
+      subRealTime();
+    } else {
+      unsubRealTime();
+    }
+    return () => {
+      unsubRealTime();
+    }
+  }, [realTime, subRealTime, unsubRealTime]);
 
   return (
     <div className='w-full h-full'>
@@ -173,6 +214,16 @@ const TradingChart = ({ tokenAddress }) => {
             className='text-white p-2 rounded-md'
           >
             5D
+          </Button>
+          <Button
+            type={realTime ? 'primary' : 'text'}
+            onClick={() => {
+              setRealTime(!realTime);
+              localStorage.setItem('realTime', !realTime);
+            }}
+            className='text-white p-2 rounded-md'
+          >
+            Real Time
           </Button>
         </div>
         <div className='flex gap-2 flex-1'>

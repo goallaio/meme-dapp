@@ -15,7 +15,7 @@ const GlobalProvider = ({ serverValue, children }) => {
   const [user, setUser] = useState(null);
   const [address, setAddress] = useState(null);
   const [showUserForm, setShowUserForm] = useState(false);
-  const { onSocket, offSocket } = useWebSocket(`ws://${serverValue.urlInfo.socketHost}/chain?userId=${user?.userId ?? ''}`);
+  const { onSocket, offSocket, sendMessage } = useWebSocket(`ws://${serverValue.urlInfo.socketHost}/chain?userId=${user?.userId ?? ''}`);
 
   const [okbPrice, setOkbPrice] = useState(null);
 
@@ -36,7 +36,6 @@ const GlobalProvider = ({ serverValue, children }) => {
   const fetchOkbPrice = useCallback(async () => {
     try {
       const res = await getOkbPrice();
-      console.log(res);
       setOkbPrice(res?.okb?.usd);
       priceTimer.current = setTimeout(fetchOkbPrice, 10 * 1000);
     } catch {
@@ -80,8 +79,8 @@ const GlobalProvider = ({ serverValue, children }) => {
       logoPrefix,
       okbPrice,
       checkUser, showUserForm, setShowUserForm,
-      onSocket, offSocket
-    }), [ user, setUser, address, setAddress, message, modal, logoPrefix, checkUser, showUserForm, setShowUserForm, onSocket, offSocket ]);
+      onSocket, offSocket, sendMessage
+    }), [user, address, message, modal, logoPrefix, okbPrice, checkUser, showUserForm, onSocket, offSocket, sendMessage]);
 
   useEffect(() => {
     if (window.ethereum) {

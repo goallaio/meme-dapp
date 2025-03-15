@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 function useWebSocket(url) {
   const ws = useRef(null);
   const eventMap = useRef(new Map());
+  const [isConnect, setIsConnect] = useState(false);
 
   useEffect(() => {
     if (!url) {
@@ -13,6 +14,7 @@ function useWebSocket(url) {
     ws.current.onopen = function open() {
       console.log('WebSocket connection established');
       // ws.current.send(JSON.stringify({ event: 'message', data: 'Hello from the client!' }));
+      setIsConnect(true);
     };
 
     ws.current.onmessage = function incoming(event) {
@@ -22,10 +24,12 @@ function useWebSocket(url) {
     };
 
     ws.current.onclose = function close() {
+      setIsConnect(false);
       console.log('WebSocket connection closed');
     };
 
     ws.current.onerror = function error(err) {
+      setIsConnect(false);
       console.error('WebSocket error:', err);
     };
 
@@ -56,7 +60,14 @@ function useWebSocket(url) {
     }
   };
 
-  return { onSocket, offSocket };
+  const sendMessage = (event, data) => {
+    if (!ws.current || !isConnect) {
+      return;
+    }
+    ws.current?.send(JSON.stringify({ event, data }));
+  }
+
+  return { onSocket, offSocket, sendMessage };
 }
 
 export default useWebSocket;
