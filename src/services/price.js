@@ -10,6 +10,9 @@ async function findPriceStatistics(tokenAddress, startTime, endTime) {
         lte: endTime,
       },
     },
+    orderBy: {
+      timestamp: 'asc',
+    },
   });
 }
 
