@@ -64,6 +64,10 @@ function useWebSocket(url) {
     if (!ws.current || !isConnect) {
       return;
     }
+    if (ws.current.readyState !== WebSocket.OPEN) {
+      console.warn('WebSocket is not open. Message not sent.');
+      return;
+    }
     ws.current?.send(JSON.stringify({ event, data }));
   }
 
