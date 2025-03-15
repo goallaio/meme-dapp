@@ -164,6 +164,7 @@ const TradingChart = ({ tokenAddress }) => {
         close: Number(item.endPrice),
       };
       seriesRef.current?.update(d);
+      chartRef.current?.timeScale().scrollToRealTime();
     }
   }, [tokenAddress]);
 
