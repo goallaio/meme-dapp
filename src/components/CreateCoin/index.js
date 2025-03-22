@@ -2,7 +2,6 @@
 
 import { GlobalContext } from '@/context/global';
 import { addToken } from '@/request/token';
-import { getBase64 } from '@/util/imgBase64';
 import { PlusOutlined } from '@ant-design/icons';
 import { Form, Input, Button, Upload, Image } from 'antd';
 import { useContext, useEffect, useState } from 'react';
