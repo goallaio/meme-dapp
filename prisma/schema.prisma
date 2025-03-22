@@ -23,30 +23,30 @@ model User {
 }
 
 model Token {
-  tokenId     String        @id @default(nanoid()) @map("token_id")
-  userId      String        @map("user_id")
-  name        String
-  ticker      String        @unique
-  image       String
-  description String
-  telegram    String?
-  weblink     String?
-  twitter     String?
-  tokenInfo   String?       @map("token_info")
-  createTime  DateTime      @default(now()) @map("create_time")
-  updateTime  DateTime      @updatedAt @map("update_time")
-  decimals    String?
-  fee         String?
-  from        String?
-  gasPrice    String?       @map("gas_price")
-  gasUsed     String?       @map("gas_used")
-  to          String?
-  address     String?       @unique
-  bondAddress String?       @map("bond_address")
-  comment     Comment[]
-  user        User          @relation(fields: [userId], references: [userId])
-  transaction Transaction[]
-  userToken   UserToken[]
+  tokenId                    String                       @id @default(nanoid()) @map("token_id")
+  userId                     String                       @map("user_id")
+  name                       String
+  ticker                     String                       @unique
+  image                      String
+  description                String
+  telegram                   String?
+  weblink                    String?
+  twitter                    String?
+  tokenInfo                  String?                      @map("token_info")
+  createTime                 DateTime                     @default(now()) @map("create_time")
+  updateTime                 DateTime                     @updatedAt @map("update_time")
+  decimals                   String?
+  fee                        String?
+  from                       String?
+  gasPrice                   String?                      @map("gas_price")
+  gasUsed                    String?                      @map("gas_used")
+  to                         String?
+  address                    String?                      @unique
+  bondAddress                String?                      @map("bond_address")
+  comment                    Comment[]
+  user                       User                         @relation(fields: [userId], references: [userId])
+  transaction                Transaction[]
+  userToken                  UserToken[]
   tokenTransactionStatistics TokenTransactionStatistics[]
 
   @@map("token")
@@ -123,7 +123,7 @@ model Comment {
 
 model TokenTransaction {
   id           String   @id @default(nanoid()) @map("id")
-  type         Int?
+  type         Int? // 0: sell, 1: buy
   address      String?
   hash         String?  @unique
   userId       String?  @map("user_id")
@@ -135,18 +135,17 @@ model TokenTransaction {
   @@map("token_transaction")
 }
 
-
 model TokenTransactionStatistics {
   id           String @id @default(nanoid()) @map("id")
-  tokenAddress String @map("token_address") @unique()
+  tokenAddress String @unique() @map("token_address")
 
   sellTotalAmount      String @map("sell_total_amount")
   sellTotalTokenAmount String @map("sell_total_token_amount")
-  sellCount            Int    @map("sell_count")
+  sellCount            String @map("sell_count")
 
   buyTotalAmount      String @map("buy_total_amount")
   buyTotalTokenAmount String @map("buy_total_token_amount")
-  buyCount            Int    @map("buy_count")
+  buyCount            String @map("buy_count")
 
   lastUpdated DateTime @updatedAt @map("last_updated")
 
