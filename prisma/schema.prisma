@@ -23,9 +23,9 @@ model User {
   createTime DateTime @default(now()) @map("create_time")
   updateTime DateTime @updatedAt @map("update_time")
 
-  Token           Token[]
-  UserToken       UserToken[]
-  comment         Comment[]
+  token     Token[]
+  userToken UserToken[]
+  comment   Comment[]
 
   @@map("user")
 }
@@ -56,9 +56,10 @@ model Token {
 
   user User @relation(fields: [userId], references: [userId])
 
-  Transaction Transaction[]
-  UserToken   UserToken[]
-  Comment     Comment[]
+  transaction Transaction[]
+  userToken   UserToken[]
+  comment     Comment[]
+  tokenTransactionStatistics TokenTransactionStatistics?
 
   @@map("token")
 }
@@ -79,7 +80,7 @@ model Transaction {
   timestamp    DateTime @default(now())
   currentPrice String?  @map("current_price")
 
-  token      Token? @relation(fields: [address], references: [address])
+  token Token? @relation(fields: [address], references: [address])
 
   @@map("transaction")
 }
@@ -100,43 +101,43 @@ model UserToken {
 }
 
 model PriceHistory {
-  priceHistoryId String   @id @default(nanoid()) @map("price_history_id")
-  tokenAddress   String   @map("token_address")
-  
-  originPrice    BigInt   @map("origin_price")
-  formattedPrice String   @map("formatted_price")
+  priceHistoryId String @id @default(nanoid()) @map("price_history_id")
+  tokenAddress   String @map("token_address")
 
-  timestamp      DateTime @default(now())
+  originPrice    BigInt @map("origin_price")
+  formattedPrice String @map("formatted_price")
+
+  timestamp DateTime @default(now())
 
   @@map("price_history")
 }
 
 model PriceStatistics {
-  priceStatisticsId String   @id @default(nanoid()) @map("price_statistics_id")
-  tokenAddress      String   @map("token_address")
+  priceStatisticsId String @id @default(nanoid()) @map("price_statistics_id")
+  tokenAddress      String @map("token_address")
 
-  minPrice          BigInt   @map("min_price")
-  maxPrice          BigInt   @map("max_price")
-  startPrice        BigInt   @map("start_price")
-  endPrice          BigInt   @map("end_price")
+  minPrice   BigInt @map("min_price")
+  maxPrice   BigInt @map("max_price")
+  startPrice BigInt @map("start_price")
+  endPrice   BigInt @map("end_price")
 
-  timestamp         DateTime
+  timestamp DateTime
 
   @@map("price_statistics")
 }
 
 model Comment {
-  commentId     String   @id @default(nanoid()) @map("comment_id")
-  userId        String   @map("user_id")
-  tokenId       String   @map("token_id")
-  text          String
-  image         String?
-  createTime    DateTime @default(now()) @map("create_time")
-  replyToId     String?  @map("reply_to_id")
+  commentId  String   @id @default(nanoid()) @map("comment_id")
+  userId     String   @map("user_id")
+  tokenId    String   @map("token_id")
+  text       String
+  image      String?
+  createTime DateTime @default(now()) @map("create_time")
+  replyToId  String?  @map("reply_to_id")
 
-  user  User  @relation(fields: [userId], references: [userId])
-  token Token @relation(fields: [tokenId], references: [tokenId])
-  replyTo Comment? @relation("CommentReplies", fields: [replyToId], references: [commentId], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [userId])
+  token   Token     @relation(fields: [tokenId], references: [tokenId])
+  replyTo Comment?  @relation("CommentReplies", fields: [replyToId], references: [commentId], onDelete: Cascade)
   replies Comment[] @relation("CommentReplies")
 
   @@map("comment")
@@ -159,4 +160,23 @@ model TokenTransaction {
   timestamp   DateTime @default(now())
 
   @@map("token_transaction")
+}
+
+model TokenTransactionStatistics {
+  id           String @id @default(nanoid()) @map("id")
+  tokenAddress String @map("token_address") @unique()
+
+  sellTotalAmount      String @map("sell_total_amount")
+  sellTotalTokenAmount String @map("sell_total_token_amount")
+  sellCount            Int    @map("sell_count")
+
+  buyTotalAmount      String @map("buy_total_amount")
+  buyTotalTokenAmount String @map("buy_total_token_amount")
+  buyCount            Int    @map("buy_count")
+
+  lastUpdated DateTime @updatedAt @map("last_updated")
+
+  token Token @relation(fields: [tokenAddress], references: [address])
+
+  @@map("token_transaction_statistics")
 }
