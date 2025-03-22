@@ -1,5 +1,6 @@
 'use client'
-import { Button, Form, Input, Layout } from 'antd'
+import { login } from '@/request/user';
+import { Button, Form, Input, Layout, App } from 'antd'
 import { useState } from 'react';
 
 const page = () => {
@@ -7,11 +8,22 @@ const page = () => {
 
   const [loading, setLoading] = useState(false);
 
+  const { message } = App.useApp();
+
   const confirmForm = async () => {
     try {
       setLoading(true);
       const values = await form.validateFields();
-      console.log(values);
+      const res = await login(values);
+      if (res?.token) {
+        localStorage.setItem('token', res.token);
+        message.success('Login successful');
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 500);
+      }
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
