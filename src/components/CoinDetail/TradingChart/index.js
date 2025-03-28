@@ -1,11 +1,22 @@
 'use client'
-import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createChart, ColorType, CandlestickSeries } from 'lightweight-charts';
 import { getTokenCahrtData } from '@/request/token';
 // import {generateData} from '@/util/sampleChart';
 import dayjs from 'dayjs';
-import {Button} from 'antd';
 import {GlobalContext} from '@/context/global';
+import {DownOutlined, FullscreenOutlined, StopOutlined, FullscreenExitOutlined} from '@ant-design/icons';
+import { Dropdown, Spin, Button } from 'antd';
+import clsx from 'clsx';
+
+const INTERVAL_OPTIONS = [
+  { label: '1m', key: '1' },
+  { label: '5m', key: '5' },
+  { label: '15m', key: '15' },
+  { label: '30m', key: '30' },
+  // { label: '45m', key: '45' },
+  { label: '1h', key: '60' },
+];
 
 const TradingChart = ({ tokenAddress }) => {
   const {onSocket, offSocket, sendMessage} = useContext(GlobalContext);
@@ -17,17 +28,73 @@ const TradingChart = ({ tokenAddress }) => {
   const [day, setDay] = useState(5);
   const [mode, setMode] = useState(0);
   const [realTime, setRealTime] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [interval, setInterval] = useState(1);
+  const [hoveredData, setHoveredData] = useState(null);
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
 
   const fetchChartData = async (dateRange) => {
     const date = dayjs();
     const data = dateRange || {startTime: date.subtract(5, 'd').startOf('d').valueOf(), endTime: date.endOf('d').valueOf()};
     try {
+      setLoading(true);
       const res = await getTokenCahrtData(tokenAddress, data);
       setInitData(res);
+      setLoading(false);
     } catch (error) {
       console.error('Failed to fetch chart data:', error);
+      setLoading(false);
     }
   };
+
+  const staticData = (data, intv) => {
+    if (intv === 1) return data;
+    const res = [];
+    let i = 0;
+    let currentArr = [];
+    for (const d of data) {
+      currentArr.push(d);
+      if ((dayjs(d.time * 1000).minute() % intv === 0 || currentArr.length >= intv) && currentArr.length > 0) {
+        const open = currentArr[0].open;
+        const close = currentArr[currentArr.length - 1].close;
+        const high = Math.max(...currentArr.map(c => c.high));
+        const low = Math.min(...currentArr.map(c => c.low));
+        // const open = Math.random() * 100;
+        // const close = Math.random() * 100;
+        // const high = Math.max(open, close) + Math.random() * 10;
+        // const low = Math.min(open, close) - Math.random() * 10;
+        res.push({time: currentArr[currentArr.length - 1].time, open, close, high, low});
+        currentArr = [];
+      }
+      i++;
+    }
+    return res;
+  }
+
+  const setVisibleRange = (chart, data) => {
+    if (data.length < 30) {
+      chart.timeScale().fitContent();
+      return;
+    };
+    const startIndex = data.length - 30 < 0 ? 0 : data.length - 30;
+    chart.timeScale().setVisibleRange({
+      from: data[startIndex].time,
+      to: data[data.length - 1].time,
+    });
+  }
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+    chartRef.current.applyOptions({
+      width: containerRef.current.clientWidth,
+      height: isFullscreen ? containerRef.current.clientHeight : 600,
+    });
+  }, [isFullscreen]);
 
   useEffect(() => {
     if (!tokenAddress) return;
@@ -37,16 +104,18 @@ const TradingChart = ({ tokenAddress }) => {
   useEffect(() => {
     if (initData.length === 0 || !chartRef.current || !seriesRef.current) return;
 
-    seriesRef.current.setData(initData);
+    const data = staticData(initData, interval);
+    seriesRef.current.setData(data);
+    setVisibleRange(chartRef.current, data);
 
     // chartRef.current.priceScale('right').applyOptions({
     //   minTick: 1e-8,
     //   minValue: 0,
     //   maxValue: 1e-6, 
     // });
-    chartRef.current.timeScale().fitContent();
-    chartRef.current.timeScale().scrollToPosition(5);
-  }, [initData]);
+    // chartRef.current.timeScale().fitContent();
+    // chartRef.current.timeScale().scrollToPosition(5);
+  }, [initData, interval]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -131,14 +200,14 @@ const TradingChart = ({ tokenAddress }) => {
 
     // console.log(data);
 
-    newSeries.setData(initData);
+    const data = staticData(initData, interval);
+    newSeries.setData(data);
+    setVisibleRange(chart, data);
     // chart.priceScale('right').applyOptions({
     //   minTick: 1e-8,
     //   minValue: 0,
     //   maxValue: 1e-6, 
     // });
-    chart.timeScale().fitContent();
-    chart.timeScale().scrollToPosition(5);
 
     chartRef.current = chart;
     seriesRef.current = newSeries;
@@ -151,6 +220,39 @@ const TradingChart = ({ tokenAddress }) => {
       window.removeEventListener('resize', handleResize);
 
       chart.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!chartRef.current || !seriesRef.current) return;
+
+    const handleCrosshairMove = (param) => {
+      if (!param || !param.seriesData || param.seriesData.size === 0) {
+        setHoveredData(null);
+        return;
+      }
+
+      const data = param.seriesData.get(seriesRef.current);
+      if (data) {
+        const rate = (((data.close - data.open) / data.open) * 100).toFixed(2);
+        setHoveredData({
+          open: data.open,
+          close: data.close,
+          high: data.high,
+          low: data.low,
+          rate,
+          div: data.close - data.open,
+          color: data.close >= data.open ? '#26a69a' : '#ef5350', // 根据涨跌设置颜色
+        });
+      } else {
+        setHoveredData(null);
+      }
+    };
+
+    chartRef.current.subscribeCrosshairMove(handleCrosshairMove);
+
+    return () => {
+      chartRef.current.unsubscribeCrosshairMove(handleCrosshairMove);
     };
   }, []);
 
@@ -191,10 +293,50 @@ const TradingChart = ({ tokenAddress }) => {
     }
   }, [realTime, subRealTime, unsubRealTime]);
 
+  const currentInterval = useMemo(() => {
+    return INTERVAL_OPTIONS.find(i => i.key === interval);
+  }, [interval]);
+
   return (
-    <div className='w-full h-full'>
-      <div className='w-full h-[600px]' ref={containerRef} />
-      <div className='flex w-full justify-between'>
+    <div className={clsx('flex flex-col w-full h-full relative', { 'fixed top-0 left-0 z-50 bg-black': isFullscreen })}>
+      {loading && <Spin spinning={loading} className='absolute top-0 left-0 h-full w-full flex justify-center items-center z-20' />}
+      <div className='flex w-full gap-2 px-2 border-b border-gray-500'>
+        <div className='flex gap-2 flex-1'>
+          <Dropdown
+            menu={{
+              items: INTERVAL_OPTIONS,
+              onClick: ({key}) => {
+                setInterval(key);
+                if (key !== '1') {
+                  setRealTime(false);
+                }
+              }
+            }}
+            trigger={['click']}
+          >
+            <Button type='text' className='w-fit border-0 m-0'>{currentInterval?.label ?? '1m'}</Button>
+          </Dropdown>
+        </div>
+        <div className='w-full px-2 py-1 text-sm flex items-center' style={{ color: hoveredData?.color || '#888888', textAlign: 'left' }}>
+          {hoveredData
+            ? `O ${hoveredData.open} C ${hoveredData.close} H ${hoveredData.high} L ${hoveredData.low} ${hoveredData.div} (${hoveredData.rate})%`
+            : (
+              <span className='whitespace-nowrap'>
+                O ∅ C ∅ H ∅ L ∅ (∅%)
+              </span>
+            )}
+        </div>
+        <div className='flex flex-1 gap-2 justify-end'>
+          <Button
+            className='m-0 p-2'
+            type='text'
+            icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+            onClick={toggleFullscreen}
+          />
+        </div>
+      </div>
+      <div className={clsx('w-full min-h-[600px]', {'flex-1': isFullscreen})} ref={containerRef} />
+      <div className='flex w-full justify-between items-center px-2 py-1'>
         <div className='flex gap-2 flex-1'>
           <Button
             type={day === 1 ? 'default' : 'text'}
@@ -202,7 +344,7 @@ const TradingChart = ({ tokenAddress }) => {
               setDay(1);
               fetchChartData({startTime: dayjs().subtract(1, 'd').startOf('d').valueOf(), endTime: dayjs().endOf('d').valueOf()});
             }}
-            className='text-white p-2 rounded-md'
+            className='text-white rounded-md m-0 p-2'
           >
             1D
           </Button>
@@ -212,7 +354,7 @@ const TradingChart = ({ tokenAddress }) => {
               setDay(5);
               fetchChartData({startTime: dayjs().subtract(5, 'd').startOf('d').valueOf(), endTime: dayjs().endOf('d').valueOf()})
             }}
-            className='text-white p-2 rounded-md'
+            className='text-white rounded-md m-0 p-2'
           >
             5D
           </Button>
@@ -222,13 +364,14 @@ const TradingChart = ({ tokenAddress }) => {
               setRealTime(!realTime);
               localStorage.setItem('realTime', !realTime);
             }}
-            className='text-white p-2 rounded-md'
+            className='text-white p-2 rounded-md m-0'
           >
             Real Time
           </Button>
         </div>
-        <div className='flex gap-2 flex-1'>
+        <div className='flex gap-2 flex-1 justify-end'>
           <Button
+            className='m-0 p-2'
             type={mode === 0 ? 'default' : 'text'}
             onClick={() => {
               setMode(0);
@@ -238,6 +381,7 @@ const TradingChart = ({ tokenAddress }) => {
             Normal
           </Button>
           <Button
+            className='m-0 p-2'
             type={mode === 1 ? 'default' : 'text'}
             onClick={() => {
               setMode(1);
@@ -247,6 +391,7 @@ const TradingChart = ({ tokenAddress }) => {
             L
           </Button>
           <Button
+            className='m-0 p-2'
             type={mode === 2 ? 'default' : 'text'}
             onClick={() => {
               setMode(2);
@@ -256,6 +401,7 @@ const TradingChart = ({ tokenAddress }) => {
             Percent
           </Button>
           <Button
+            className='m-0 p-2'
             type={mode === 3 ? 'default' : 'text'}
             onClick={() => {
               setMode(3);
