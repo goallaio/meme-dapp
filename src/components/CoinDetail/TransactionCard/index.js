@@ -1,5 +1,6 @@
 'use client'
 import { GlobalContext } from '@/context/global';
+import { checkChain } from '@/lib/chain';
 import { createTokenTransaction } from '@/request/token';
 import { BOND_ABI, FACTORY_ABI, FACTORY_ADDRESS, TOKEN_ABI } from '@/util/coin/constant';
 import { parseReceipt } from '@/util/coin/parseReceipt';
@@ -30,15 +31,16 @@ const TransactionCard = ({ record }) => {
         message.error('Please input amount.');
         return;
       }
-      if (!window.ethereum) {
-        message.error('Please install MetaMask first.');
-        return;
-      }
       if (!bondAddress) {
         message.error('Invalid contract address.');
         return;
       }
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = await checkChain();
+      if (!provider) {
+        message.error('Please install MetaMask first.');
+        return;
+      }
+      // const provider = new ethers.BrowserProvider(window.ethereum);
       await provider.send('eth_requestAccounts', []);
 
       const signer = await provider.getSigner();

@@ -1,6 +1,7 @@
 'use client'
-import { fetchDashboardBrief } from '@/request/dashboard';
+import { fetchDashboardBrief, fetchDashboardTrade } from '@/request/dashboard';
 import { Layout, Button, Table, Spin } from 'antd';
+import { formatEther } from 'ethers';
 import { useEffect, useState } from 'react';
 
 const AdminDashboard = () => {
@@ -8,26 +9,41 @@ const AdminDashboard = () => {
 
   const [briefInfo, setBriefInfo] = useState({});
 
+  const [dataSource, setDataSource] = useState([]);
+
   const columns = [
     {
-      dataIndex: 'token',
-      title: 'Token'
+      dataIndex: 'tokenAddress',
+      title: 'Token',
+      ellipsis: true
     },
     {
-      dataIndex: 'sellTransactions',
+      dataIndex: 'sellCount',
       title: 'Sell Transactions'
     },
     {
-      dataIndex: 'buyTransactions',
+      dataIndex: 'buyCount',
       title: 'Buy Transactions'
     },
     {
-      dataIndex: 'sellVolume',
-      title: 'Sell Volume'
+      dataIndex: 'sellTotalAmount',
+      title: 'Sell Volume (Okb)',
+      render: (text) => {
+        if (text) {
+          return formatEther(BigInt(text));
+        }
+        return '--';
+      }
     },
     {
-      dataIndex: 'buyVolume',
-      title: 'Buy Volume'
+      dataIndex: 'buyTotalAmount',
+      title: 'Buy Volume (Okb)',
+      render: (text) => {
+        if (text) {
+          return formatEther(BigInt(text));
+        }
+        return '--';
+      }
     }
   ];
 
@@ -35,8 +51,17 @@ const AdminDashboard = () => {
     try {
       setLoading((prev) => prev + 1);
       const res = await fetchDashboardBrief();
-      console.log(res);
       setBriefInfo(res?.data || {});
+    } finally {
+      setLoading((prev) => prev - 1);
+    }
+  };
+
+  const fetchTokenInfo = async () => {
+    try {
+      setLoading((prev) => prev + 1);
+      const res = await fetchDashboardTrade();
+      setDataSource(res?.data || []);
     } finally {
       setLoading((prev) => prev - 1);
     }
@@ -49,6 +74,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchBriefInfo();
+    fetchTokenInfo();
   }, []);
 
   if (loading > 0) {
@@ -94,6 +120,8 @@ const AdminDashboard = () => {
           <Table
             columns={columns}
             size='middle'
+            dataSource={dataSource}
+            rowKey='id'
           />
         </div>
       </div>

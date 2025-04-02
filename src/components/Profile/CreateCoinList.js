@@ -1,4 +1,4 @@
-import { SingleCoinCard } from '@/app/page';
+import { SingleCoinCard } from '@/app/(user)/home/page';
 import { getTokenList } from '@/request/token';
 import { Empty, Pagination } from 'antd';
 import { Spin } from 'antd';

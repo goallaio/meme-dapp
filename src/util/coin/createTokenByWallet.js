@@ -1,9 +1,13 @@
+import { checkChain } from '@/lib/chain';
 import { FACTORY_ADDRESS, FACTORY_ABI } from './constant';
 import { ethers, parseEther } from 'ethers';
 
 export const createTokenByWallet = async (address, { name, ticker }) => {
-  const provider = new ethers.BrowserProvider(window.ethereum);
   try {
+    const provider = await checkChain();
+    if (!provider) {
+      return false;
+    }
     const signer = await provider.getSigner(address);
     const factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, signer);
 

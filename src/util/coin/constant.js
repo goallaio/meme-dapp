@@ -10,3 +10,9 @@ export const FACTORY_ABI = new Interface(factoryJson).format(true);
 export const TOKEN_ABI = new Interface(tokenJson).format(true);
 
 export const BOND_ABI = new Interface(bondJson).format(true);
+
+export const CHAIN_ID = '0xC3';
+
+export const CHAIN_NAME = 'X Layer Testnet';
+
+export const RPC_URLS = ['https://testrpc.xlayer.tech'];
